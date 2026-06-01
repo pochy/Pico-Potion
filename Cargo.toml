@@ -1,14 +1,13 @@
 [package]
-name = "micro_notion"
+name = "pico_potion"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 axum = { version = "0.7", features = ["form"] }
 serde = { version = "1.0", features = ["derive"] }
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.0", features = ["macros", "net", "rt"] }
 rusqlite = { version = "0.31", features = ["bundled"] }
-tower-http = { version = "0.5", features = ["cors"] }
 
 [profile.release]
 opt-level = "z"     # サイズ最小化

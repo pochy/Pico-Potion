@@ -55,4 +55,4 @@
 
 ```bash
 # プロセス名でRSS（物理メモリ消費量）を確認
-ps -eo pid,rss,comm | grep micro_notion
+ps -eo pid,rss,comm | grep pico_potion

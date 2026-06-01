@@ -3,6 +3,7 @@
 **/*.rs.bk
 
 # アプリ実行時に生成される SQLite DB
+pico_potion.db
 micro_notion.db
 *.db-journal
 *.db-wal

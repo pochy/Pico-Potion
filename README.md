@@ -1,6 +1,6 @@
-# Micro Notion (Rust)
+# Pico Potion (Rust)
 
-家庭内LAN環境のRaspberry Pi上で動作する、極限まで軽量化されたセルフホスト型のNotion風Webアプリケーションです。
+家庭内LAN環境のRaspberry Pi上で動作する、極限まで軽量化されたセルフホスト型の共有ノートWebアプリケーションです。
 
 ## 📋 背景と目的
 
@@ -19,7 +19,7 @@
 ### フロントエンド (Vanilla JS / HTML5)
 
 * **ライブラリフリー:** React、Vue、Editor.jsなどの外部フレームワーク・エディタライブラリを一切排除。
-* **標準機能の活用:** HTML5の `contenteditable` 属性と生JavaScript（Vanilla JS）のみでNotion風のスラッシュコマンド（`/1`, `/2`, `/b`）および自動保存（デバウンス処理）を実現。
+* **標準機能の活用:** HTML5の `contenteditable` 属性と生JavaScript（Vanilla JS）のみでスラッシュコマンド（`/1`, `/2`, `/b`）および自動保存（デバウンス処理）を実現。
 * **シングルファイル化:** CSSやJSを1枚のHTMLに内蔵し、Rustのバイナリ（文字列型）に組み込むことで、ファイルI/Oのオーバーヘッドを削減。
 
 ## 🚀 使い方
@@ -32,29 +32,39 @@
 cargo build --release
 ```
 
-バイナリは `target/release/micro_notion` に出力されます。
+バイナリは `target/release/pico_potion` に出力されます。
 
 > **注意:** Mac や Windows でビルドしたバイナリは、そのままラズパイ（Linux aarch64）では動きません。ラズパイ上でビルドするか、クロスコンパイルが必要です。
 
 ### 2. 手動起動（動作確認用）
 
 ```bash
-./target/release/micro_notion
+./target/release/pico_potion
 ```
 
-起動後、同じマシンから `http://localhost:8080` で確認できます。
+ポートはデフォルト `8080` です。変更する場合は次のいずれかを使います。
+
+```bash
+./target/release/pico_potion --port 3000
+./target/release/pico_potion 3000
+PICO_POTION_PORT=3000 ./target/release/pico_potion
+```
+
+起動後、同じマシンから `http://localhost:8080`（または指定したポート）で確認できます。
 
 ### 3. アクセス
 
 同じLAN内のMacやWindowsのブラウザから以下のアドレスにアクセスします。
 
 ```text
-http://<ラズパイのIPアドレス>:8080
+http://<ラズパイのIPアドレス>:<ポート>
 ```
+
+（ポート未指定時は `8080`）
 
 ### 4. ショートカット
 
-エディタ内で以下の文字を入力した直後に**半角スペース**を入力すると、Notion風にブロックが変換されます。
+エディタ内で以下の文字を入力した直後に**半角スペース**を入力すると、ブロックが変換されます。
 
 * `/1` : 大見出し (H1)
 * `/2` : 小見出し (H2)
@@ -91,39 +101,42 @@ cargo build --release
 
 ### 2. 配置
 
-DB ファイル（`micro_notion.db`）は**カレントディレクトリ**に作成されるため、systemd の `WorkingDirectory` を固定して運用します。
+DB ファイル（`pico_potion.db`）は**カレントディレクトリ**に作成されるため、systemd の `WorkingDirectory` を固定して運用します。
 
 ```bash
-sudo useradd --system --no-create-home --shell /usr/sbin/nologin micro-notion
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin pico-potion
 
-sudo mkdir -p /opt/micro-notion
-sudo cp target/release/micro_notion /opt/micro-notion/
-sudo chown -R micro-notion:micro-notion /opt/micro-notion
-sudo chmod 755 /opt/micro-notion/micro_notion
+sudo mkdir -p /opt/pico-potion
+sudo cp target/release/pico_potion /opt/pico-potion/
+sudo chown -R pico-potion:pico-potion /opt/pico-potion
+sudo chmod 755 /opt/pico-potion/pico_potion
 ```
 
-初回起動後、`/opt/micro-notion/micro_notion.db` が自動作成されます。
+初回起動後、`/opt/pico-potion/pico_potion.db` が自動作成されます。
+
+旧名（Micro Notion）から移行する場合は、同じディレクトリに `micro_notion.db` があれば初回起動時に `pico_potion.db` へ自動リネームされます。
 
 ### 3. systemd ユニットファイルの作成
 
 ```bash
-sudo nano /etc/systemd/system/micro-notion.service
+sudo nano /etc/systemd/system/pico-potion.service
 ```
 
 以下を貼り付けます:
 
 ```ini
 [Unit]
-Description=Micro Notion (family shared note)
+Description=Pico Potion (family shared note)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=micro-notion
-Group=micro-notion
-WorkingDirectory=/opt/micro-notion
-ExecStart=/opt/micro-notion/micro_notion
+User=pico-potion
+Group=pico-potion
+WorkingDirectory=/opt/pico-potion
+ExecStart=/opt/pico-potion/pico_potion
+Environment=PICO_POTION_PORT=8080
 
 Restart=on-failure
 RestartSec=5
@@ -132,7 +145,7 @@ RestartSec=5
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/micro-notion
+ReadWritePaths=/opt/pico-potion
 
 [Install]
 WantedBy=multi-user.target
@@ -142,9 +155,9 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable micro-notion
-sudo systemctl start micro-notion
-sudo systemctl status micro-notion
+sudo systemctl enable pico-potion
+sudo systemctl start pico-potion
+sudo systemctl status pico-potion
 ```
 
 正常なら `Active: active (running)` と表示されます。
@@ -155,52 +168,51 @@ sudo systemctl status micro-notion
 curl http://localhost:8080
 ```
 
-LAN 内の他端末からは `http://<ラズパイのIPアドレス>:8080` でアクセスできます（`0.0.0.0:8080` で待ち受け）。
+LAN 内の他端末からは `http://<ラズパイのIPアドレス>:<ポート>` でアクセスできます（全インターフェースの `0.0.0.0` で待ち受け）。
 
 ### よく使うコマンド
 
 | 操作 | コマンド |
 |------|----------|
-| 状態確認 | `sudo systemctl status micro-notion` |
-| 停止 | `sudo systemctl stop micro-notion` |
-| 再起動 | `sudo systemctl restart micro-notion` |
-| 自動起動 OFF | `sudo systemctl disable micro-notion` |
-| ログ（リアルタイム） | `journalctl -u micro-notion -f` |
-| ログ（今日分） | `journalctl -u micro-notion --since today` |
+| 状態確認 | `sudo systemctl status pico-potion` |
+| 停止 | `sudo systemctl stop pico-potion` |
+| 再起動 | `sudo systemctl restart pico-potion` |
+| 自動起動 OFF | `sudo systemctl disable pico-potion` |
+| ログ（リアルタイム） | `journalctl -u pico-potion -f` |
+| ログ（今日分） | `journalctl -u pico-potion --since today` |
 
 ### バイナリ更新時
 
 新しいバイナリを配置してから再起動します。
 
 ```bash
-sudo cp target/release/micro_notion /opt/micro-notion/
-sudo chown micro-notion:micro-notion /opt/micro-notion/micro_notion
-sudo systemctl restart micro-notion
+sudo cp target/release/pico_potion /opt/pico-potion/
+sudo chown pico-potion:pico-potion /opt/pico-potion/pico_potion
+sudo systemctl restart pico-potion
 ```
 
 ### 補足
 
 * **systemd とデーモン:** 「デーモン」はバックグラウンド常駐プロセスの総称。Linux では systemd がそれを管理するのが一般的です。
-* **ポート:** 現在は `8080` 固定です（`src/main.rs` 内で指定）。
+* **ポート:** デフォルト `8080`。`--port` / 第1引数 / 環境変数 `PICO_POTION_PORT` で変更可能（CLI が最優先）。
 * **80番ポートで公開したい場合:** 1024 未満のポートは root 権限が必要なため、nginx 等でリバースプロキシするのが一般的です。
 
 ---
 
 ## 📦 コマンド一発で Zip にまとめる方法
 
-ファイル（`Cargo.toml`, `src/main.rs`, `README.md`）が揃ったら、ターミナルで以下のコマンドを実行してください。プロジェクト一式を `micro_notion.zip` に圧縮します。
+ファイル（`Cargo.toml`, `src/main.rs`, `README.md`）が揃ったら、ターミナルで以下のコマンドを実行してください。プロジェクト一式を `pico_potion.zip` に圧縮します。
 
 ### Mac / Linux（ラズパイ）の場合
 
 ```bash
-zip -r micro_notion.zip Cargo.toml src/ README.md
+zip -r pico_potion.zip Cargo.toml src/ README.md
 
 ```
 
 ### Windows (PowerShell) の場合
 
 ```powershell
-Compress-Archive -Path Cargo.toml, src, README.md -DestinationPath micro_notion.zip
+Compress-Archive -Path Cargo.toml, src, README.md -DestinationPath pico_potion.zip
 
 ```
-
